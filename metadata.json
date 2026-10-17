@@ -1,0 +1,6 @@
+{
+  "name": "GATE Revision OS",
+  "description": "Full-stack spaced repetition & academic productivity operating system for GATE CSE and DA aspirants with adaptive recall scheduling, PYQ error notebook, and daily planner.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
