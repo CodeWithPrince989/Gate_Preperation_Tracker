@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { Download, Upload, RotateCcw, Bell, Database, CheckCircle, Copy, Check, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
-import { StorageEngine } from '../lib/storage';
+import { Download, Upload, RotateCcw, Bell, Database, CheckCircle, Copy, Check, ExternalLink, ChevronDown, ChevronUp, Trash2, Sparkles, HardDrive } from 'lucide-react';
+import { StorageEngine, StorageMode } from '../lib/storage';
 import { setCustomSupabaseCredentials, getCustomSupabaseCredentials } from '../lib/supabase';
 import { createClient } from '@supabase/supabase-js';
 
@@ -87,7 +87,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onDataReset, isSupab
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [notificationStatus, setNotificationStatus] = useState<string>('');
   const [statusMessage, setStatusMessage] = useState<string>('');
-  
+  const [currentStorageMode, setCurrentStorageMode] = useState<StorageMode>(StorageEngine.getStorageMode());
+
   // Cloud Database Connection state
   const existingCreds = getCustomSupabaseCredentials();
   const [supabaseUrl, setSupabaseUrl] = useState(existingCreds.url);
@@ -96,6 +97,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onDataReset, isSupab
   const [testResult, setTestResult] = useState<{ success: boolean; msg: string } | null>(null);
   const [showSqlSchema, setShowSqlSchema] = useState(false);
   const [copiedSql, setCopiedSql] = useState(false);
+
+  const handleModeSwitch = (mode: StorageMode) => {
+    StorageEngine.setStorageMode(mode);
+    setCurrentStorageMode(mode);
+    setStatusMessage(`Switched to ${mode === 'local' ? 'Local Storage Mode' : 'Cloud Mode'}. Reloading...`);
+    setTimeout(() => {
+      onDataReset();
+      window.location.reload();
+    }, 600);
+  };
 
   const handleExport = () => {
     const data = StorageEngine.exportJSON();
@@ -118,6 +129,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onDataReset, isSupab
       if (content && StorageEngine.importJSON(content)) {
         setStatusMessage('Backup imported successfully! Reloading...');
         setTimeout(() => {
+          onDataReset();
           window.location.reload();
         }, 600);
       } else {
@@ -152,7 +164,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onDataReset, isSupab
     setTestResult(null);
     try {
       const client = createClient(supabaseUrl.trim(), supabaseKey.trim());
-      // Test querying or verifying connection
       const { error } = await client.from('topics').select('id').limit(1);
       if (error && error.code !== 'PGRST116' && !error.message.includes('relation "public.topics" does not exist')) {
         setTestResult({
@@ -162,16 +173,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onDataReset, isSupab
       } else if (error && error.message.includes('relation "public.topics" does not exist')) {
         setTestResult({
           success: true,
-          msg: 'Connected to Supabase! (Note: Remember to run the SQL schema below to create the tables).'
+          msg: 'Connected to Supabase! (Note: Run the SQL schema below to create tables).'
         });
         setCustomSupabaseCredentials(supabaseUrl.trim(), supabaseKey.trim());
+        StorageEngine.setStorageMode('cloud');
         setTimeout(() => window.location.reload(), 1500);
       } else {
         setTestResult({
           success: true,
-          msg: 'Successfully connected and verified database tables! Switching to Cloud Mode...'
+          msg: 'Successfully connected and verified database tables! Cloud Mode enabled.'
         });
         setCustomSupabaseCredentials(supabaseUrl.trim(), supabaseKey.trim());
+        StorageEngine.setStorageMode('cloud');
         setTimeout(() => window.location.reload(), 1200);
       }
     } catch (err: any) {
@@ -185,14 +198,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onDataReset, isSupab
   };
 
   const disconnectSupabase = () => {
-    setCustomSupabaseCredentials('', '');
-    setSupabaseUrl('');
-    setSupabaseKey('');
+    StorageEngine.setStorageMode('local');
     setTestResult({
       success: true,
-      msg: 'Disconnected from cloud database. Reverted to Local Browser Storage.'
+      msg: 'Operating in Local Storage Mode (Browser Only).'
     });
-    setTimeout(() => window.location.reload(), 1000);
+    setTimeout(() => window.location.reload(), 600);
   };
 
   const copySql = () => {
@@ -204,51 +215,96 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onDataReset, isSupab
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {statusMessage && (
-        <div className="p-3 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
-          <CheckCircle className="w-4 h-4 text-emerald-600" />
+        <div className="p-3.5 bg-[#161922] border border-[#42D6A4]/30 rounded-xl text-xs text-[#42D6A4] flex items-center gap-2">
+          <CheckCircle className="w-4 h-4 shrink-0" />
           <span>{statusMessage}</span>
         </div>
       )}
 
-      {/* Database Mode Card */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-2xs">
+      {/* Storage Mode Selector Card */}
+      <div className="bg-[#101218] border border-[#272C38] rounded-2xl p-5 sm:p-6 shadow-xs">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Database className="w-4 h-4 text-blue-600" /> Database & Storage Engine
+          <h2 className="text-base font-bold text-[#F5F7FA] flex items-center gap-2">
+            <HardDrive className="w-4 h-4 text-[#8B9CFF]" /> Storage Engine Mode
           </h2>
-          <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
-            isSupabase
-              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
-              : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-300 dark:border-blue-800'
+          <span className={`text-xs font-mono font-semibold px-2 py-0.5 rounded-full ${
+            currentStorageMode === 'cloud' && isSupabase
+              ? 'bg-[#42D6A4]/15 text-[#42D6A4]'
+              : 'bg-[#8B9CFF]/15 text-[#8B9CFF]'
           }`}>
-            {isSupabase ? 'Cloud (Supabase PostgreSQL)' : 'Local Mode (Browser Storage)'}
+            {currentStorageMode === 'cloud' ? 'Cloud Supabase' : 'Local Browser Mode'}
           </span>
         </div>
 
-        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-          By default, all your data is stored locally in your browser with zero latency and full offline support.
-          You can optionally connect a free Supabase cloud database to sync across devices.
+        <p className="text-xs text-[#737B8C] mb-4">
+          Choose where your revision schedules, topics, and PYQs are stored. In Local Mode, data is kept strictly inside your browser with instant zero-latency responses and full offline resilience.
         </p>
 
-        {/* Supabase Connection Form */}
-        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-              {isSupabase ? 'Cloud Database Connected' : 'Connect Cloud Database (Supabase PostgreSQL)'}
-            </span>
-            <a
-              href="https://supabase.com"
-              target="_blank"
-              rel="noreferrer"
-              className="text-[11px] text-blue-600 dark:text-blue-400 flex items-center gap-1 hover:underline"
-            >
-              Get Free Supabase <ExternalLink className="w-3 h-3" />
-            </a>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button
+            onClick={() => handleModeSwitch('local')}
+            className={`p-3.5 rounded-xl border text-left transition ${
+              currentStorageMode === 'local'
+                ? 'bg-[#161922] border-[#8B9CFF] ring-1 ring-[#8B9CFF]/30'
+                : 'bg-[#101218] border-[#272C38] hover:border-[#3B4254]'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-bold text-[#F5F7FA]">Local Storage Mode</span>
+              {currentStorageMode === 'local' && (
+                <span className="text-[10px] font-mono text-[#8B9CFF] font-semibold">Active</span>
+              )}
+            </div>
+            <p className="text-[11px] text-[#737B8C]">
+              Zero-setup, works completely offline in your browser. Initializes with zero data or sample syllabus.
+            </p>
+          </button>
 
+          <button
+            onClick={() => handleModeSwitch('cloud')}
+            className={`p-3.5 rounded-xl border text-left transition ${
+              currentStorageMode === 'cloud'
+                ? 'bg-[#161922] border-[#8B9CFF] ring-1 ring-[#8B9CFF]/30'
+                : 'bg-[#101218] border-[#272C38] hover:border-[#3B4254]'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-bold text-[#F5F7FA]">Cloud Database Mode</span>
+              {currentStorageMode === 'cloud' && (
+                <span className="text-[10px] font-mono text-[#42D6A4] font-semibold">Active</span>
+              )}
+            </div>
+            <p className="text-[11px] text-[#737B8C]">
+              Sync across multiple devices via PostgreSQL tables on Supabase.
+            </p>
+          </button>
+        </div>
+      </div>
+
+      {/* Cloud Supabase Configuration */}
+      <div className="bg-[#101218] border border-[#272C38] rounded-2xl p-5 sm:p-6 shadow-xs">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-base font-bold text-[#F5F7FA] flex items-center gap-2">
+            <Database className="w-4 h-4 text-[#8B9CFF]" /> Supabase PostgreSQL Credentials
+          </h2>
+          <a
+            href="https://supabase.com"
+            target="_blank"
+            rel="noreferrer"
+            className="text-[11px] text-[#8B9CFF] flex items-center gap-1 hover:underline"
+          >
+            Supabase Console <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
+
+        <p className="text-xs text-[#737B8C] mb-4">
+          Connect your custom Supabase PostgreSQL project or verify existing connection settings.
+        </p>
+
+        <div className="p-4 rounded-xl border border-[#272C38] bg-[#161922] space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+              <label className="block text-[11px] font-semibold text-[#A1A8B7] mb-1">
                 Project URL
               </label>
               <input
@@ -256,75 +312,70 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onDataReset, isSupab
                 placeholder="https://xyzcompany.supabase.co"
                 value={supabaseUrl}
                 onChange={e => setSupabaseUrl(e.target.value)}
-                className="w-full text-xs p-2 border border-slate-300 dark:border-slate-700 rounded-lg dark:bg-slate-800 dark:text-white"
+                className="w-full text-xs p-2.5 border border-[#272C38] rounded-xl bg-[#101218] text-[#F5F7FA] focus:ring-1 focus:ring-[#8B9CFF] outline-hidden font-mono"
               />
             </div>
             <div>
-              <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+              <label className="block text-[11px] font-semibold text-[#A1A8B7] mb-1">
                 Anon Public Key
               </label>
               <input
                 type="password"
-                placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..."
+                placeholder="sb_publishable_... or anon key"
                 value={supabaseKey}
                 onChange={e => setSupabaseKey(e.target.value)}
-                className="w-full text-xs p-2 border border-slate-300 dark:border-slate-700 rounded-lg dark:bg-slate-800 dark:text-white"
+                className="w-full text-xs p-2.5 border border-[#272C38] rounded-xl bg-[#101218] text-[#F5F7FA] focus:ring-1 focus:ring-[#8B9CFF] outline-hidden font-mono"
               />
             </div>
           </div>
 
           {testResult && (
-            <div className={`p-2.5 rounded-lg text-xs ${
+            <div className={`p-3 rounded-xl text-xs border ${
               testResult.success
-                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300'
-                : 'bg-red-50 dark:bg-red-950/60 text-red-800 dark:text-red-300 border border-red-300'
+                ? 'bg-[#101218] text-[#42D6A4] border-[#42D6A4]/40'
+                : 'bg-[#101218] text-[#FF727C] border-[#FF727C]/40'
             }`}>
               {testResult.msg}
             </div>
           )}
 
-          <div className="flex flex-wrap gap-2 pt-1">
+          <div className="flex flex-wrap gap-2.5 pt-1">
             <button
               onClick={testAndSaveSupabase}
               disabled={isTesting}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-xs disabled:opacity-50"
+              className="px-4 py-2 bg-[#8B9CFF] hover:bg-[#9DAEFF] text-[#08090D] rounded-xl text-xs font-bold transition shadow-xs disabled:opacity-50 active:scale-95"
             >
-              {isTesting ? 'Connecting & Verifying...' : isSupabase ? 'Update Connection' : 'Connect & Save'}
+              {isTesting ? 'Connecting & Verifying...' : 'Test & Connect Cloud'}
             </button>
-            {isSupabase && (
-              <button
-                onClick={disconnectSupabase}
-                className="px-3 py-2 border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-              >
-                Disconnect & Use Local Storage
-              </button>
-            )}
+            <button
+              onClick={disconnectSupabase}
+              className="px-3.5 py-2 border border-[#272C38] text-[#A1A8B7] hover:text-[#F5F7FA] rounded-xl text-xs font-semibold hover:bg-[#1C202B] transition"
+            >
+              Switch to Local Storage
+            </button>
           </div>
         </div>
 
-        {/* SQL Schema helper */}
-        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-          <div
+        {/* Collapsible SQL Schema Viewer */}
+        <div className="mt-4 pt-3 border-t border-[#272C38]">
+          <button
             onClick={() => setShowSqlSchema(!showSqlSchema)}
-            className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer select-none"
+            className="flex items-center justify-between w-full text-xs font-medium text-[#A1A8B7] hover:text-[#F5F7FA] transition py-1"
           >
-            <span>Need to set up tables in Supabase? View SQL Schema</span>
-            {showSqlSchema ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </div>
+            <span>Supabase DDL Table Schema (Click to View SQL)</span>
+            {showSqlSchema ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
 
           {showSqlSchema && (
-            <div className="mt-3 space-y-2">
-              <div className="flex items-center justify-between text-[11px] text-slate-500">
-                <span>Copy and paste into your Supabase Dashboard &rarr; <strong>SQL Editor</strong>:</span>
-                <button
-                  onClick={copySql}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-800 dark:text-slate-200 rounded font-semibold text-xs transition"
-                >
-                  {copiedSql ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                  {copiedSql ? 'Copied!' : 'Copy SQL'}
-                </button>
-              </div>
-              <pre className="text-[11px] font-mono bg-slate-900 text-slate-200 p-3 rounded-lg overflow-x-auto max-h-60 border border-slate-800">
+            <div className="mt-3 relative">
+              <button
+                onClick={copySql}
+                className="absolute top-2 right-2 px-2.5 py-1 rounded-lg bg-[#161922] border border-[#272C38] text-[11px] font-mono text-[#A1A8B7] hover:text-[#F5F7FA] flex items-center gap-1 transition"
+              >
+                {copiedSql ? <Check className="w-3 h-3 text-[#42D6A4]" /> : <Copy className="w-3 h-3" />}
+                <span>{copiedSql ? 'Copied' : 'Copy SQL'}</span>
+              </button>
+              <pre className="p-3 bg-[#08090D] border border-[#272C38] rounded-xl text-[11px] text-[#A1A8B7] overflow-x-auto max-h-56 font-mono leading-relaxed">
                 {INIT_SQL_SCHEMA}
               </pre>
             </div>
@@ -332,23 +383,91 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onDataReset, isSupab
         </div>
       </div>
 
-      {/* Backup & Portability */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-2xs">
-        <h2 className="text-base font-bold text-slate-900 dark:text-white mb-1">
-          Data Backup & Portability
-        </h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-          Export your entire spaced repetition history, topics, and PYQ logs to standard JSON.
-        </p>
+      {/* Zero Data & Demo Syllabus Controls */}
+      <div className="bg-[#101218] border border-[#272C38] rounded-2xl p-5 sm:p-6 shadow-xs space-y-5">
+        <div>
+          <h2 className="text-base font-bold text-[#F5F7FA] mb-1">
+            Data State &amp; Syllabus Seeding
+          </h2>
+          <p className="text-xs text-[#737B8C]">
+            Experience a brand-new user journey with zero data, or load a pre-configured GATE CSE &amp; DA curriculum with spaced review cycles.
+          </p>
+        </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Zero Data Reset */}
+          <div className="p-4 rounded-xl border border-[#FF727C]/30 bg-[#161922] flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-[#FF727C] text-xs font-bold mb-1">
+                <Trash2 className="w-4 h-4" />
+                <span>Reset to Brand-New (Zero Data)</span>
+              </div>
+              <p className="text-[11px] text-[#737B8C] leading-relaxed">
+                Initializes clean empty arrays (0 topics, 0 sessions, 0 logs). Test empty-state views and custom syllabus creation.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                if (confirm('Clear all topics, revision sessions, and practice logs to a clean empty state?')) {
+                  StorageEngine.resetToEmpty();
+                  onDataReset();
+                  setStatusMessage('All data cleared. System initialized to zero data empty state.');
+                }
+              }}
+              className="mt-4 w-full py-2 px-3 rounded-xl bg-[#1C202B] hover:bg-[#FF727C] text-[#FF727C] hover:text-[#08090D] border border-[#FF727C]/40 text-xs font-bold transition active:scale-95"
+            >
+              Clear to Zero Data
+            </button>
+          </div>
+
+          {/* Load Sample GATE Syllabus */}
+          <div className="p-4 rounded-xl border border-[#8B9CFF]/30 bg-[#161922] flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-[#8B9CFF] text-xs font-bold mb-1">
+                <Sparkles className="w-4 h-4" />
+                <span>Load Sample GATE Syllabus</span>
+              </div>
+              <p className="text-[11px] text-[#737B8C] leading-relaxed">
+                Loads realistic GATE syllabus topics (Normalization, Multi-level Paging, Eigenvalues, Backprop) with active retention intervals.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                StorageEngine.loadSampleData();
+                onDataReset();
+                setStatusMessage('Loaded sample GATE CSE & DA syllabus topics!');
+              }}
+              className="mt-4 w-full py-2 px-3 rounded-xl bg-[#8B9CFF] hover:bg-[#9DAEFF] text-[#08090D] text-xs font-bold shadow-xs transition active:scale-95"
+            >
+              Load Sample Topics
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* JSON Backup & Portability */}
+      <div className="bg-[#101218] border border-[#272C38] rounded-2xl p-5 sm:p-6 shadow-xs">
+        <h2 className="text-base font-bold text-[#F5F7FA] mb-1">
+          Backup &amp; Data Portability
+        </h2>
+        <p className="text-xs text-[#737B8C] mb-4">
+          Export your entire revision history, mistake logs, and schedule to JSON or restore a previous snapshot.
+        </p>
         <div className="flex flex-wrap gap-3">
           <button
             onClick={handleExport}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs transition"
+            className="inline-flex items-center gap-2 px-4 py-2 border border-[#272C38] rounded-xl text-xs font-semibold text-[#F5F7FA] hover:bg-[#161922] transition active:scale-95"
           >
-            <Download className="w-4 h-4" /> Export Backup (JSON)
+            <Download className="w-4 h-4 text-[#8B9CFF]" />
+            <span>Export Backup (.JSON)</span>
           </button>
-
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="inline-flex items-center gap-2 px-4 py-2 border border-[#272C38] rounded-xl text-xs font-semibold text-[#F5F7FA] hover:bg-[#161922] transition active:scale-95"
+          >
+            <Upload className="w-4 h-4 text-[#42D6A4]" />
+            <span>Restore from Backup</span>
+          </button>
           <input
             type="file"
             ref={fileInputRef}
@@ -356,55 +475,27 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onDataReset, isSupab
             accept=".json"
             className="hidden"
           />
-
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold transition"
-          >
-            <Upload className="w-4 h-4" /> Restore from JSON
-          </button>
         </div>
       </div>
 
-      {/* Browser Notifications */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-2xs">
-        <h2 className="text-base font-bold text-slate-900 dark:text-white mb-1">
-          Study Reminders & Notifications
+      {/* Notifications */}
+      <div className="bg-[#101218] border border-[#272C38] rounded-2xl p-5 sm:p-6 shadow-xs">
+        <h2 className="text-base font-bold text-[#F5F7FA] mb-1">
+          Study Reminders &amp; Notifications
         </h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+        <p className="text-xs text-[#737B8C] mb-4">
           Enable local browser notifications to remind you when daily spaced repetitions are scheduled.
         </p>
         <button
           onClick={requestNotificationPermission}
-          className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+          className="inline-flex items-center gap-2 px-4 py-2 border border-[#272C38] rounded-xl text-xs font-semibold text-[#F5F7FA] hover:bg-[#1C202B] transition active:scale-95"
         >
-          <Bell className="w-4 h-4 text-blue-600" /> Enable Notifications
+          <Bell className="w-4 h-4 text-[#8B9CFF]" />
+          <span>Enable Notifications</span>
         </button>
         {notificationStatus && (
-          <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">{notificationStatus}</p>
+          <p className="text-xs text-[#8B9CFF] mt-2 font-mono">{notificationStatus}</p>
         )}
-      </div>
-
-      {/* Reset Seed Data */}
-      <div className="bg-white dark:bg-slate-900 border border-red-200 dark:border-red-900/40 rounded-xl p-5 shadow-2xs">
-        <h2 className="text-base font-bold text-red-600 dark:text-red-400 mb-1">
-          Reset Data
-        </h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-          Reset local browser storage back to default seed data (Normalization, Virtual Memory, SVD, Gradient Descent, etc.).
-        </p>
-        <button
-          onClick={() => {
-            if (confirm('Are you sure you want to reset all records back to default demo seed data?')) {
-              StorageEngine.resetToDefaultSeed();
-              onDataReset();
-              setStatusMessage('Data reset to default GATE seed!');
-            }
-          }}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold transition"
-        >
-          <RotateCcw className="w-4 h-4" /> Reset to Demo Seed Data
-        </button>
       </div>
     </div>
   );

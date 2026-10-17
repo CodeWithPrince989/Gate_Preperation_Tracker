@@ -63,21 +63,40 @@ export const AddTopicModal: React.FC<AddTopicModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800">
-          <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <PlusCircle className="w-5 h-5 text-blue-600" /> Add Topic for Spaced Repetition
-          </h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg">
+    <div className="fixed inset-0 z-50 bg-[#08090D]/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-[#101218] border border-[#272C38] rounded-t-3xl sm:rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl max-h-[90dvh] sm:max-h-[85vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+        {/* Mobile Grab Handle */}
+        <div className="sm:hidden w-10 h-1 bg-[#272C38] rounded-full mx-auto my-2" />
+
+        {/* Modal Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#272C38] bg-[#161922]/60">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-[#8B9CFF]/10 border border-[#8B9CFF]/20 text-[#8B9CFF] flex items-center justify-center">
+              <PlusCircle className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-sm sm:text-base font-bold text-[#F5F7FA]">
+                Add Topic for Spaced Recall
+              </h2>
+              <span className="text-[11px] text-[#737B8C]">
+                Auto-generates standard 7-session spaced intervals
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 flex items-center justify-center rounded-lg text-[#737B8C] hover:text-[#F5F7FA] hover:bg-[#1C202B] transition"
+            aria-label="Close"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+        {/* Modal Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
           {/* Topic Name */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-xs font-semibold text-[#F5F7FA] mb-1">
               Topic Name *
             </label>
             <input
@@ -86,14 +105,14 @@ export const AddTopicModal: React.FC<AddTopicModalProps> = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. B-Trees and B+ Trees Indexing"
-              className="w-full text-sm p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-hidden"
+              className="w-full text-xs sm:text-sm p-3 rounded-xl border border-[#272C38] bg-[#161922] text-[#F5F7FA] placeholder-[#737B8C] focus:ring-1 focus:ring-[#8B9CFF] focus:border-[#8B9CFF] outline-hidden"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             {/* Exam */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-[#A1A8B7] mb-1">
                 Target Exam
               </label>
               <select
@@ -104,7 +123,7 @@ export const AddTopicModal: React.FC<AddTopicModalProps> = ({
                   const firstValid = subjects.find(s => newExam === 'BOTH' || s.exam === 'BOTH' || s.exam === newExam);
                   if (firstValid) setSubjectName(firstValid.name);
                 }}
-                className="w-full text-sm p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white"
+                className="w-full text-xs p-2.5 rounded-xl border border-[#272C38] bg-[#161922] text-[#F5F7FA] outline-hidden"
               >
                 <option value="CSE">GATE CSE</option>
                 <option value="DA">GATE DA</option>
@@ -114,13 +133,13 @@ export const AddTopicModal: React.FC<AddTopicModalProps> = ({
 
             {/* Subject */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-[#A1A8B7] mb-1">
                 Subject
               </label>
               <select
                 value={subjectName}
                 onChange={(e) => setSubjectName(e.target.value)}
-                className="w-full text-sm p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white"
+                className="w-full text-xs p-2.5 rounded-xl border border-[#272C38] bg-[#161922] text-[#F5F7FA] outline-hidden truncate"
               >
                 {filteredSubjects.map(s => (
                   <option key={s.id} value={s.name}>{s.name}</option>
@@ -129,59 +148,59 @@ export const AddTopicModal: React.FC<AddTopicModalProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             {/* First Studied Date */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Date First Studied (Day 1)
+              <label className="block text-xs font-semibold text-[#A1A8B7] mb-1">
+                Day 1 (First Studied)
               </label>
               <input
                 type="date"
                 required
                 value={firstStudiedAt}
                 onChange={(e) => setFirstStudiedAt(e.target.value)}
-                className="w-full text-sm p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white"
+                className="w-full text-xs p-2.5 rounded-xl border border-[#272C38] bg-[#161922] text-[#F5F7FA] font-mono outline-hidden"
               />
             </div>
 
             {/* Topic Type */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Topic Type
+              <label className="block text-xs font-semibold text-[#A1A8B7] mb-1">
+                Topic Nature
               </label>
               <select
                 value={topicType}
                 onChange={(e) => setTopicType(e.target.value as TopicType)}
-                className="w-full text-sm p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white"
+                className="w-full text-xs p-2.5 rounded-xl border border-[#272C38] bg-[#161922] text-[#F5F7FA] outline-hidden"
               >
-                <option value="Theory">Theory</option>
-                <option value="Numerical">Numerical</option>
-                <option value="Programming">Programming</option>
-                <option value="Mixed">Mixed</option>
+                <option value="Numerical">Numerical Problem Solving</option>
+                <option value="Theory">Core Theoretical Concept</option>
+                <option value="Programming">Programming & Data Structs</option>
+                <option value="Mixed">Mixed (Theory + Problems)</option>
               </select>
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Source</label>
+              <label className="block text-[11px] font-medium text-[#737B8C] mb-1">Source</label>
               <select
                 value={learningSource}
                 onChange={(e) => setLearningSource(e.target.value as LearningSource)}
-                className="w-full text-xs p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white"
+                className="w-full text-xs p-2 rounded-xl border border-[#272C38] bg-[#161922] text-[#F5F7FA] outline-hidden"
               >
                 <option value="Lecture">Lecture</option>
-                <option value="Book">Book</option>
-                <option value="Notes">Notes</option>
+                <option value="Book">Standard Book</option>
+                <option value="Notes">Short Notes</option>
                 <option value="Other">Other</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Confidence</label>
+              <label className="block text-[11px] font-medium text-[#737B8C] mb-1">Confidence</label>
               <select
                 value={initialConfidence}
                 onChange={(e) => setInitialConfidence(e.target.value as ConfidenceLevel)}
-                className="w-full text-xs p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white"
+                className="w-full text-xs p-2 rounded-xl border border-[#272C38] bg-[#161922] text-[#F5F7FA] outline-hidden"
               >
                 <option value="Low">Low</option>
                 <option value="Medium">Medium</option>
@@ -189,11 +208,11 @@ export const AddTopicModal: React.FC<AddTopicModalProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Difficulty</label>
+              <label className="block text-[11px] font-medium text-[#737B8C] mb-1">Difficulty</label>
               <select
                 value={estimatedDifficulty}
                 onChange={(e) => setEstimatedDifficulty(e.target.value as DifficultyLevel)}
-                className="w-full text-xs p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white"
+                className="w-full text-xs p-2 rounded-xl border border-[#272C38] bg-[#161922] text-[#F5F7FA] outline-hidden"
               >
                 <option value="Easy">Easy</option>
                 <option value="Medium">Medium</option>
@@ -204,31 +223,32 @@ export const AddTopicModal: React.FC<AddTopicModalProps> = ({
 
           {/* Notes */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Short Invariant Notes / Formulas
+            <label className="block text-xs font-semibold text-[#A1A8B7] mb-1">
+              Personal Formulas & Invariants
             </label>
             <textarea
-              rows={2}
+              rows={3}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Crucial takeaway or formula to recall..."
-              className="w-full text-xs p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white"
+              placeholder="Crucial equations, edge cases, or minimal keys..."
+              className="w-full text-xs p-3 rounded-xl border border-[#272C38] bg-[#161922] text-[#F5F7FA] placeholder-[#737B8C] focus:ring-1 focus:ring-[#8B9CFF] outline-hidden font-mono"
             />
           </div>
 
-          <div className="pt-2 flex justify-end gap-3 border-t border-slate-200 dark:border-slate-800">
+          {/* Actions */}
+          <div className="pt-3 flex justify-end gap-2.5 border-t border-[#272C38]">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-[#A1A8B7] hover:bg-[#161922] transition min-h-[44px]"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 shadow-sm transition"
+              className="px-5 py-2 bg-[#8B9CFF] text-[#08090D] rounded-xl text-xs font-bold hover:bg-[#9DAEFF] shadow-xs transition active:scale-[0.98] min-h-[44px]"
             >
-              Create Topic & Auto-Schedule
+              Save & Auto-Schedule
             </button>
           </div>
         </form>

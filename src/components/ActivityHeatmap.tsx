@@ -29,39 +29,49 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ activities }) 
   }
 
   const getColorClass = (count: number) => {
-    if (count === 0) return 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700/50';
-    if (count === 1) return 'bg-emerald-200 dark:bg-emerald-900/60 border-emerald-300';
-    if (count === 2) return 'bg-emerald-400 dark:bg-emerald-700 border-emerald-500';
-    return 'bg-emerald-600 dark:bg-emerald-500 border-emerald-700 text-white';
+    if (count === 0) return 'bg-[#161922] border-[#272C38]/60 hover:border-[#737B8C]';
+    if (count === 1) return 'bg-[#183D31] border-[#235E4B]';
+    if (count === 2) return 'bg-[#297B5E] border-[#34A47E]';
+    return 'bg-[#42D6A4] border-[#55F0BB]';
   };
 
+  const totalQualifying = activities.length;
+
   return (
-    <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+    <div className="bg-[#101218] p-5 rounded-2xl border border-[#272C38] shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
-          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-            Study Consistency Heatmap (Last 365 Days)
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Each cell represents qualifying study revisions, PYQ logs, and practice sessions.
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-[#F5F7FA]">
+              Study Consistency Heatmap
+            </h3>
+            <span className="text-xs text-[#737B8C]" aria-hidden="true">&bull;</span>
+            <span className="text-xs text-[#A1A8B7] tabular-nums font-mono">
+              {totalQualifying} sessions this year
+            </span>
+          </div>
+          <p className="text-xs text-[#737B8C] mt-0.5">
+            Spaced recall sessions, PYQ audits, and concept reviews across 365 days.
           </p>
         </div>
-        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+
+        {/* Legend */}
+        <div className="flex items-center gap-1.5 text-[11px] text-[#737B8C]">
           <span>Less</span>
-          <div className="w-3 h-3 rounded-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700" />
-          <div className="w-3 h-3 rounded-xs bg-emerald-200 dark:bg-emerald-900/60" />
-          <div className="w-3 h-3 rounded-xs bg-emerald-400 dark:bg-emerald-700" />
-          <div className="w-3 h-3 rounded-xs bg-emerald-600 dark:bg-emerald-500" />
+          <div className="w-3 h-3 rounded-xs bg-[#161922] border border-[#272C38]" />
+          <div className="w-3 h-3 rounded-xs bg-[#183D31] border border-[#235E4B]" />
+          <div className="w-3 h-3 rounded-xs bg-[#297B5E]" />
+          <div className="w-3 h-3 rounded-xs bg-[#42D6A4]" />
           <span>More</span>
         </div>
       </div>
 
-      <div className="overflow-x-auto pb-2">
+      <div className="overflow-x-auto pb-2 -mx-2 px-2">
         <div className="grid grid-flow-col grid-rows-7 gap-1 w-max">
           {days.map((day) => (
             <div
               key={day.dateStr}
-              title={`${day.dateStr}: ${day.count} activities`}
+              title={`${day.dateStr}: ${day.count} active study events`}
               className={`w-3.5 h-3.5 rounded-xs border transition-colors ${getColorClass(day.count)}`}
             />
           ))}

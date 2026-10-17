@@ -3,13 +3,18 @@ import {
   Flame,
   CheckCircle2,
   AlertCircle,
-  Clock,
   BookOpen,
   CalendarDays,
   Target,
   ArrowRight,
   TrendingUp,
-  RotateCw
+  RotateCw,
+  Play,
+  Plus,
+  Sparkles,
+  Timer,
+  CheckSquare,
+  Compass
 } from 'lucide-react';
 import { Topic, RevisionSession, PracticeLog, StudyActivity, ExamType } from '../types';
 import { getSessionStatus, formatDateKey } from '../lib/scheduler';
@@ -26,6 +31,9 @@ interface DashboardViewProps {
   onStartSession: (session: RevisionSession, topic: Topic) => void;
   onRescheduleSession: (session: RevisionSession) => void;
   onOpenTopicDetail: (topic: Topic) => void;
+  onOpenAddTopic: () => void;
+  onLoadSampleData?: () => void;
+  onNavigateToTab?: (tab: string) => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -38,7 +46,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   longestStreak: _longestStreak,
   onStartSession,
   onRescheduleSession,
-  onOpenTopicDetail
+  onOpenTopicDetail,
+  onOpenAddTopic,
+  onLoadSampleData,
+  onNavigateToTab
 }) => {
   const todayStr = formatDateKey(new Date());
 
@@ -71,28 +82,244 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     ? Math.round((completedSessions.length / (completedSessions.length + overdueSessions.length)) * 100)
     : 100;
 
+  // First session to start
+  const firstDueSession = dueTodaySessions[0];
+  const firstDueTopic = firstDueSession ? topicMap.get(firstDueSession.topicId) : null;
+
+  // ==========================================
+  // BRAND-NEW USER ZERO DATA EMPTY STATE
+  // ==========================================
+  if (topics.length === 0) {
+    return (
+      <div className="space-y-6 max-w-5xl mx-auto">
+        {/* Welcome Empty State Hero */}
+        <div className="bg-[#101218] border border-[#272C38] rounded-2xl p-6 sm:p-10 shadow-xs relative overflow-hidden">
+          {/* Subtle accent glow */}
+          <div className="absolute top-0 right-0 w-80 h-80 bg-[#8B9CFF]/5 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="max-w-2xl relative z-10 space-y-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#161922] border border-[#272C38] text-xs font-mono text-[#8B9CFF]">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>GATE Spaced Repetition OS</span>
+            </div>
+
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#F5F7FA]">
+              Welcome to Your GATE Revision OS
+            </h1>
+
+            <p className="text-sm text-[#A1A8B7] leading-relaxed">
+              Your revision queue is currently empty. Add your first GATE Computer Science (CSE) or Data Science &amp; AI (DA) syllabus topic. The spaced repetition engine will automatically compute optimal review milestones (Day 1, 3, 7, 15, and 30) to prevent memory decay.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-3 pt-3">
+              <button
+                onClick={onOpenAddTopic}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#8B9CFF] hover:bg-[#9DAEFF] text-[#08090D] font-bold text-xs shadow-xs transition active:scale-[0.98]"
+              >
+                <Plus className="w-4 h-4 stroke-[2.5]" />
+                <span>Add Your First Topic</span>
+              </button>
+
+              {onLoadSampleData && (
+                <button
+                  onClick={onLoadSampleData}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#161922] hover:bg-[#1C202B] text-[#A1A8B7] hover:text-[#F5F7FA] border border-[#272C38] text-xs font-semibold transition active:scale-[0.98]"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#8B9CFF]" />
+                  <span>Load Sample GATE Syllabus</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 3 Core Workflow Guidance Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-[#101218] border border-[#272C38] p-5 rounded-2xl flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="w-9 h-9 rounded-xl bg-[#161922] border border-[#272C38] flex items-center justify-center text-[#8B9CFF]">
+                <CalendarDays className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-semibold text-[#F5F7FA]">Spaced Decay Intervals</h3>
+              <p className="text-xs text-[#737B8C] leading-relaxed">
+                Automatic 1, 3, 7, 15, and 30-day review cycles ensure formulas, proofs, and edge cases become deeply embedded in long-term memory.
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-[#272C38] text-[11px] font-mono text-[#8B9CFF]">
+              1-3-7-15-30 Spacing Algorithm
+            </div>
+          </div>
+
+          <div className="bg-[#101218] border border-[#272C38] p-5 rounded-2xl flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="w-9 h-9 rounded-xl bg-[#161922] border border-[#272C38] flex items-center justify-center text-[#42D6A4]">
+                <Timer className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-semibold text-[#F5F7FA]">Closed-Book Active Recall</h3>
+              <p className="text-xs text-[#737B8C] leading-relaxed">
+                Timed 5-minute blank-sheet test prompts you to retrieve algorithms and theorems from memory before checking notes.
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-[#272C38] text-[11px] font-mono text-[#42D6A4]">
+              Active Retrieval Testing
+            </div>
+          </div>
+
+          <div className="bg-[#101218] border border-[#272C38] p-5 rounded-2xl flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="w-9 h-9 rounded-xl bg-[#161922] border border-[#272C38] flex items-center justify-center text-[#F5BE65]">
+                <CheckSquare className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-semibold text-[#F5F7FA]">PYQ Error Notebook</h3>
+              <p className="text-xs text-[#737B8C] leading-relaxed">
+                Log question attempts and classify mistake causes (conceptual, calculation, formula forgotten, silly mistake, or time pressure).
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-[#272C38] text-[11px] font-mono text-[#F5BE65]">
+              Systematic Weakness Elimination
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Quickstart Helper */}
+        <div className="bg-[#161922] border border-[#272C38] rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-[#1C202B] text-[#8B9CFF] shrink-0">
+              <Compass className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-[#F5F7FA]">Ready to begin your study plan?</div>
+              <div className="text-xs text-[#737B8C]">
+                Pick your exam track (CSE, DA, or BOTH) in the sidebar and add topics as you study them in class or textbooks.
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={onOpenAddTopic}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#8B9CFF] hover:bg-[#9DAEFF] text-[#08090D] font-bold text-xs rounded-xl shadow-xs transition shrink-0 active:scale-95"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Topic Now</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // DASHBOARD FOR USERS WITH TOPICS
+  // ==========================================
   return (
     <div className="space-y-6">
-      {/* 1. Metric Cards Grid */}
+      {/* 0. Executive Retention Overview Card */}
+      <div className="bg-[#101218] border border-[#272C38] rounded-2xl p-5 sm:p-6 shadow-xs">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs text-[#737B8C]">
+              <span className="font-medium text-[#8B9CFF]">GATE Spaced Repetition</span>
+              <span aria-hidden="true">&bull;</span>
+              <span>CSE &amp; DA Memory Retention</span>
+              <span aria-hidden="true">&bull;</span>
+              <span className="tabular-nums font-mono text-[#A1A8B7]">{todayStr}</span>
+            </div>
+
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#F5F7FA]">
+              {dueTodaySessions.length > 0
+                ? `${dueTodaySessions.length} Revision Sessions Due Today`
+                : 'All Spaced Retention Sessions Completed'}
+            </h2>
+
+            <p className="text-xs sm:text-sm text-[#A1A8B7] max-w-2xl leading-relaxed">
+              Calculated retention decay curves for active retrieval. Recall key proofs, formulas, and edge cases from memory before reviewing notes.
+            </p>
+
+            {/* Unboxed Metadata Stats */}
+            <div className="flex flex-wrap items-center gap-3 pt-2 text-xs text-[#737B8C]">
+              <span className="flex items-center gap-1.5 font-semibold text-[#F5BE65]">
+                <Flame className="w-4 h-4 fill-[#F5BE65]" />
+                <span className="tabular-nums">{currentStreak} Day Streak</span>
+              </span>
+              <span aria-hidden="true">&bull;</span>
+              <span>
+                <strong className="text-[#F5F7FA] tabular-nums font-mono">{dueTodaySessions.length}</strong> Due Today
+              </span>
+              <span aria-hidden="true">&bull;</span>
+              <span>
+                <strong className={`tabular-nums font-mono ${overdueSessions.length > 0 ? 'text-[#FF727C]' : 'text-[#F5F7FA]'}`}>
+                  {overdueSessions.length}
+                </strong> Overdue
+              </span>
+              <span aria-hidden="true">&bull;</span>
+              <span>
+                <strong className="text-[#F5F7FA] tabular-nums font-mono">{pyqsAttempted}</strong> PYQs Solved
+              </span>
+              <span aria-hidden="true">&bull;</span>
+              <span>
+                <strong className="text-[#42D6A4] tabular-nums font-mono">{accuracy}%</strong> Accuracy
+              </span>
+            </div>
+          </div>
+
+          {/* Primary Quick Start Action */}
+          <div className="flex flex-wrap lg:flex-col gap-2 shrink-0">
+            {firstDueSession && firstDueTopic && (
+              <button
+                onClick={() => onStartSession(firstDueSession, firstDueTopic)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#8B9CFF] hover:bg-[#9DAEFF] text-[#08090D] font-bold text-xs shadow-xs transition active:scale-[0.98]"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>Start Due Revision: {firstDueTopic.name.slice(0, 24)}...</span>
+              </button>
+            )}
+
+            {overdueSessions.length > 0 && overdueSessions[0] && (
+              <button
+                onClick={() => {
+                  const s = overdueSessions[0];
+                  const t = topicMap.get(s.topicId);
+                  if (t) onStartSession(s, t);
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#161922] hover:bg-[#1C202B] text-[#FF727C] border border-[#FF727C]/30 font-semibold text-xs transition active:scale-[0.98]"
+              >
+                <AlertCircle className="w-3.5 h-3.5" />
+                <span>Clear Overdue ({overdueSessions.length})</span>
+              </button>
+            )}
+
+            <button
+              onClick={onOpenAddTopic}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#161922] hover:bg-[#1C202B] text-[#F5F7FA] border border-[#272C38] text-xs font-semibold transition active:scale-[0.98]"
+            >
+              <Plus className="w-3.5 h-3.5 text-[#8B9CFF]" />
+              <span>Add Topic</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 1. Metric Cards Grid (8 Cards) */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
         {[
-          { label: 'Topics Added', val: filteredTopics.length, icon: BookOpen, color: 'text-blue-600' },
-          { label: 'Mastered', val: masteredCount, icon: Target, color: 'text-emerald-600' },
-          { label: 'Revisions Done', val: completedSessions.length, icon: CheckCircle2, color: 'text-teal-600' },
-          { label: 'Completion %', val: `${completionRate}%`, icon: TrendingUp, color: 'text-indigo-600' },
-          { label: 'PYQs Solved', val: pyqsAttempted, icon: CheckCircle2, color: 'text-purple-600' },
-          { label: 'PYQ Accuracy', val: `${accuracy}%`, icon: Target, color: 'text-pink-600' },
-          { label: 'Current Streak', val: `${currentStreak}d`, icon: Flame, color: 'text-amber-500' },
-          { label: 'Overdue Backlog', val: overdueSessions.length, icon: AlertCircle, color: overdueSessions.length > 0 ? 'text-red-500 font-bold' : 'text-slate-400' }
+          { label: 'Topics Added', val: filteredTopics.length, icon: BookOpen, color: 'text-[#8B9CFF]' },
+          { label: 'Mastered', val: masteredCount, icon: Target, color: 'text-[#42D6A4]' },
+          { label: 'Revisions Done', val: completedSessions.length, icon: CheckCircle2, color: 'text-[#42D6A4]' },
+          { label: 'Completion %', val: `${completionRate}%`, icon: TrendingUp, color: 'text-[#8B9CFF]' },
+          { label: 'PYQs Solved', val: pyqsAttempted, icon: CheckCircle2, color: 'text-[#8B9CFF]' },
+          { label: 'PYQ Accuracy', val: `${accuracy}%`, icon: Target, color: 'text-[#42D6A4]' },
+          { label: 'Current Streak', val: `${currentStreak}d`, icon: Flame, color: 'text-[#F5BE65]' },
+          { label: 'Overdue Backlog', val: overdueSessions.length, icon: AlertCircle, color: overdueSessions.length > 0 ? 'text-[#FF727C]' : 'text-[#737B8C]' }
         ].map((card, i) => {
           const Icon = card.icon;
           return (
-            <div key={i} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-xl shadow-2xs">
-              <div className="flex items-center justify-between text-slate-400 mb-1">
-                <span className="text-[10px] font-medium tracking-tight truncate">{card.label}</span>
-                <Icon className={`w-3.5 h-3.5 ${card.color}`} />
+            <div
+              key={i}
+              className="bg-[#101218] border border-[#272C38] p-3 rounded-xl transition hover:border-[#3B4254]"
+            >
+              <div className="flex items-center justify-between text-[#737B8C] mb-1">
+                <span className="text-[11px] font-medium tracking-tight truncate">{card.label}</span>
+                <Icon className={`w-3.5 h-3.5 ${card.color} shrink-0`} />
               </div>
-              <div className="text-lg font-bold text-slate-900 dark:text-white">
+              <div className="text-lg font-bold text-[#F5F7FA] tabular-nums font-mono">
                 {card.val}
               </div>
             </div>
@@ -102,15 +329,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* 2. Overdue Alerts (If Any) */}
       {overdueSessions.length > 0 && (
-        <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 rounded-xl p-4 shadow-xs">
+        <div className="bg-[#161922] border border-[#FF727C]/30 rounded-2xl p-5 shadow-xs">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
-              <AlertCircle className="w-5 h-5 shrink-0" />
-              <h3 className="text-sm font-bold">
-                {overdueSessions.length} Overdue Revision{overdueSessions.length > 1 ? 's' : ''} Require Immediate Attention
+            <div className="flex items-center gap-2 text-[#FF727C]">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <h3 className="text-sm font-semibold">
+                {overdueSessions.length} Overdue Revision{overdueSessions.length > 1 ? 's' : ''} Require Attention
               </h3>
             </div>
-            <span className="text-xs text-red-600 dark:text-red-400 font-medium">Never silently discarded</span>
+            <span className="text-xs text-[#737B8C]">Never silently discarded</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -118,33 +345,40 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               const topic = topicMap.get(session.topicId);
               if (!topic) return null;
               return (
-                <div key={session.id} className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-red-200 dark:border-red-900/50 flex flex-col justify-between">
+                <div
+                  key={session.id}
+                  className="bg-[#101218] p-3.5 rounded-xl border border-[#272C38] hover:border-[#FF727C]/40 flex flex-col justify-between transition"
+                >
                   <div>
-                    <div className="flex items-center justify-between text-[11px] mb-1">
-                      <span className="font-mono text-red-600 dark:text-red-400 font-semibold">
-                        Due: {session.scheduledDate}
+                    <div className="flex items-center justify-between text-xs text-[#737B8C] mb-1.5">
+                      <span className="font-mono text-[#FF727C] font-semibold tabular-nums">
+                        Due {session.scheduledDate}
                       </span>
-                      <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px]">
+                      <span className="font-mono text-[11px] text-[#A1A8B7]">
                         Rev {session.sequenceNumber}
                       </span>
                     </div>
-                    <div className="font-semibold text-xs text-slate-900 dark:text-white line-clamp-1">
+                    <div
+                      onClick={() => onOpenTopicDetail(topic)}
+                      className="font-semibold text-xs sm:text-sm text-[#F5F7FA] hover:text-[#8B9CFF] cursor-pointer line-clamp-1"
+                    >
                       {topic.name}
                     </div>
-                    <div className="text-[11px] text-slate-500">{topic.subjectName}</div>
+                    <div className="text-xs text-[#737B8C] mt-0.5">{topic.subjectName}</div>
                   </div>
 
-                  <div className="flex items-center gap-2 mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2 mt-4 pt-3 border-t border-[#272C38]">
                     <button
                       onClick={() => onStartSession(session, topic)}
-                      className="flex-1 bg-red-600 hover:bg-red-700 text-white py-1 rounded text-xs font-semibold transition"
+                      className="flex-1 bg-[#FF727C] hover:bg-[#FF858E] text-[#08090D] py-1.5 px-3 rounded-lg text-xs font-bold transition active:scale-95"
                     >
                       Revise Now
                     </button>
                     <button
                       onClick={() => onRescheduleSession(session)}
-                      className="px-2 py-1 border border-slate-300 dark:border-slate-700 rounded text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      className="p-1.5 border border-[#272C38] rounded-lg text-[#737B8C] hover:text-[#F5F7FA] hover:bg-[#1C202B] transition"
                       title="Reschedule to Today"
+                      aria-label="Reschedule to Today"
                     >
                       <RotateCw className="w-3.5 h-3.5" />
                     </button>
@@ -156,43 +390,64 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
 
-      {/* 3. Today's Revisions */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-2xs">
+      {/* 3. Today's Scheduled Revisions */}
+      <div className="bg-[#101218] border border-[#272C38] rounded-2xl p-5 shadow-xs">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <CalendarDays className="w-4 h-4 text-blue-600" /> Today's Scheduled Revisions
+            <h3 className="text-sm font-semibold text-[#F5F7FA] flex items-center gap-2">
+              <CalendarDays className="w-4 h-4 text-[#8B9CFF]" /> Today's Scheduled Revisions
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Target sessions scheduled for today ({todayStr})</p>
+            <p className="text-xs text-[#737B8C] mt-0.5">
+              Active recall queue for {todayStr}
+            </p>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900">
+          <span className="text-xs font-mono font-semibold text-[#8B9CFF] tabular-nums">
             {dueTodaySessions.length} Due
           </span>
         </div>
 
         {dueTodaySessions.length === 0 ? (
-          <div className="text-center py-8 text-slate-400 text-xs">
-            <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-emerald-500/80" />
-            No more revisions due today! You are on top of your spaced repetition schedule.
+          <div className="text-center py-8 text-[#737B8C] text-xs">
+            <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-[#42D6A4]" />
+            <p className="text-sm font-medium text-[#F5F7FA]">All scheduled revisions for today are completed!</p>
+            <p className="text-xs text-[#737B8C] mt-1">Review upcoming intervals below or log new PYQs from past papers.</p>
+            <div className="flex justify-center gap-2 mt-4">
+              {onNavigateToTab && (
+                <button
+                  onClick={() => onNavigateToTab('pyqs')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#161922] text-[#8B9CFF] border border-[#272C38] hover:bg-[#1C202B] transition"
+                >
+                  <CheckSquare className="w-3.5 h-3.5" /> Practice PYQs
+                </button>
+              )}
+              <button
+                onClick={onOpenAddTopic}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#161922] text-[#F5F7FA] border border-[#272C38] hover:bg-[#1C202B] transition"
+              >
+                <Plus className="w-3.5 h-3.5 text-[#8B9CFF]" /> Add New Topic
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+          <div className="divide-y divide-[#272C38]">
             {dueTodaySessions.map(session => {
               const topic = topicMap.get(session.topicId);
               if (!topic) return null;
               return (
-                <div key={session.id} className="py-3 flex items-center justify-between gap-4">
+                <div key={session.id} className="py-3.5 flex items-center justify-between gap-4">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-semibold">
-                        {topic.exam}
+                    <div className="flex items-center gap-2 text-xs text-[#737B8C]">
+                      <span className="font-mono text-[#8B9CFF] font-semibold">{topic.exam}</span>
+                      <span aria-hidden="true">&bull;</span>
+                      <span>{topic.subjectName}</span>
+                      <span aria-hidden="true">&bull;</span>
+                      <span className="tabular-nums font-mono text-[#A1A8B7]">
+                        Rev {session.sequenceNumber} ({session.durationMinutes}m)
                       </span>
-                      <span className="text-xs text-slate-500">{topic.subjectName}</span>
-                      <span className="text-xs text-slate-400">&bull; Rev {session.sequenceNumber} ({session.durationMinutes}m)</span>
                     </div>
                     <div
                       onClick={() => onOpenTopicDetail(topic)}
-                      className="font-medium text-xs sm:text-sm text-slate-900 dark:text-white hover:text-blue-600 cursor-pointer truncate mt-0.5"
+                      className="font-medium text-xs sm:text-sm text-[#F5F7FA] hover:text-[#8B9CFF] cursor-pointer truncate mt-1"
                     >
                       {topic.name}
                     </div>
@@ -200,9 +455,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
                   <button
                     onClick={() => onStartSession(session, topic)}
-                    className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs transition"
+                    className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#8B9CFF] hover:bg-[#9DAEFF] text-[#08090D] rounded-lg text-xs font-bold shadow-xs transition active:scale-95"
                   >
-                    Start <ArrowRight className="w-3.5 h-3.5" />
+                    <Play className="w-3 h-3 fill-current" />
+                    <span>Start Revision</span>
                   </button>
                 </div>
               );
@@ -211,39 +467,51 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         )}
       </div>
 
-      {/* 4. Activity Heatmap */}
-      <ActivityHeatmap activities={activities} />
-
-      {/* 5. Upcoming 7 Days Preview */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-2xs">
-        <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
-          <Clock className="w-4 h-4 text-slate-500" /> Upcoming Revisions (Next 7 Days)
-        </h3>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Pre-scheduled spaced retention dates</p>
+      {/* 4. Upcoming 7-Day Timeline */}
+      <div className="bg-[#101218] border border-[#272C38] rounded-2xl p-5 shadow-xs">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-[#F5F7FA]">
+            Upcoming Revisions (Next 7 Days)
+          </h3>
+          <span className="text-xs text-[#737B8C] font-mono tabular-nums">
+            {upcomingSessions.length} Scheduled
+          </span>
+        </div>
 
         {upcomingSessions.length === 0 ? (
-          <div className="text-xs text-slate-400 py-4 text-center">No upcoming sessions in the next 7 days.</div>
+          <div className="text-center py-6 text-xs text-[#737B8C]">
+            No upcoming revisions in the next 7 days. Add new syllabus topics to automatically populate future retention intervals.
+          </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {upcomingSessions.map(session => {
               const topic = topicMap.get(session.topicId);
               if (!topic) return null;
               return (
-                <div key={session.id} className="p-3 border rounded-lg dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono mb-1">
-                    <span>{session.scheduledDate}</span>
-                    <span className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-[10px]">
-                      Rev {session.sequenceNumber}
+                <div
+                  key={session.id}
+                  onClick={() => onOpenTopicDetail(topic)}
+                  className="bg-[#161922] p-3 rounded-xl border border-[#272C38] hover:border-[#3B4254] transition cursor-pointer"
+                >
+                  <div className="flex items-center justify-between text-[11px] text-[#737B8C] mb-1">
+                    <span className="font-mono text-[#8B9CFF] font-semibold tabular-nums">
+                      {session.scheduledDate}
                     </span>
+                    <span className="font-mono text-[#A1A8B7]">Rev {session.sequenceNumber}</span>
                   </div>
-                  <div className="text-xs font-medium text-slate-900 dark:text-white line-clamp-1">{topic.name}</div>
-                  <div className="text-[10px] text-slate-500">{topic.subjectName}</div>
+                  <div className="font-medium text-xs text-[#F5F7FA] truncate">
+                    {topic.name}
+                  </div>
+                  <div className="text-[11px] text-[#737B8C] mt-0.5">{topic.subjectName}</div>
                 </div>
               );
             })}
           </div>
         )}
       </div>
+
+      {/* 5. Spaced Retention Activity Heatmap */}
+      <ActivityHeatmap activities={activities} />
     </div>
   );
 };

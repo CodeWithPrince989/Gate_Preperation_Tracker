@@ -26,11 +26,11 @@ const supabaseKey =
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Auto-seed function if Supabase is empty
-async function autoSeedIfEmpty() {
+async function autoSeedIfEmpty(force = false) {
   try {
     const { data: topics, error } = await supabase.from('topics').select('id').limit(1);
-    if (!error && (!topics || topics.length === 0)) {
-      console.log('⚡ Initializing empty Supabase database with GATE CSE & DA seed data...');
+    if (force || (!error && (!topics || topics.length === 0))) {
+      console.log('⚡ Initializing Supabase database with GATE CSE & DA seed data...');
       const today = new Date();
       const formatDate = (d: Date) => d.toISOString().split('T')[0];
       const subD = (days: number) => {
@@ -161,6 +161,20 @@ async function autoSeedIfEmpty() {
           duration_minutes: 25,
           questions_attempted: 0,
           questions_correct: 0
+        },
+        {
+          id: '22222222-2222-2222-2222-222222222205',
+          topic_id: '11111111-1111-1111-1111-111111111101',
+          sequence_number: 1,
+          scheduled_date: formatDate(subD(6)),
+          completed_at: subD(6).toISOString(),
+          status: 'COMPLETED',
+          duration_minutes: 25,
+          recall_rating: 3,
+          questions_attempted: 5,
+          questions_correct: 4,
+          mistakes_summary: 'Forgot candidate key definition with multiple minimal keys',
+          retrieval_notes: 'Recalled 1NF, 2NF, 3NF cleanly.'
         }
       ];
       await supabase.from('revision_sessions').upsert(seedSessions);

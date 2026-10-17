@@ -2,8 +2,71 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+:root {
+  --bg-app: #08090D;
+  --surface-primary: #101218;
+  --surface-secondary: #161922;
+  --surface-elevated: #1C202B;
+  --text-primary: #F5F7FA;
+  --text-secondary: #A1A8B7;
+  --text-muted: #737B8C;
+  --border-subtle: #272C38;
+  --accent-primary: #8B9CFF;
+  --color-success: #42D6A4;
+  --color-warning: #F5BE65;
+  --color-error: #FF727C;
+
+  color-scheme: dark;
+}
+
 @layer base {
+  * {
+    border-color: var(--border-subtle);
+  }
+
   body {
-    @apply antialiased text-slate-900 bg-slate-50 dark:bg-slate-950 dark:text-slate-100;
+    background-color: var(--bg-app);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Plus Jakarta Sans", -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+}
+
+/* Tabular figures for numbers, counters, times */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Slender macOS/iOS dark scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #272C38;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3B4254;
+}
+
+/* Mobile safe area padding */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}
+
+/* Reduced motion compliance */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

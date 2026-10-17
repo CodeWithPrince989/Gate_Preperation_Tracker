@@ -1,65 +1,99 @@
 import React, { useState } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths } from 'date-fns';
 import { RevisionSession, Topic, ExamType } from '../types';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, BookOpen } from 'lucide-react';
 
 interface CalendarViewProps {
   sessions: RevisionSession[];
   topics: Topic[];
   examFilter: ExamType;
   onOpenSession: (session: RevisionSession, topic: Topic) => void;
+  onOpenAddTopic?: () => void;
 }
 
 export const CalendarView: React.FC<CalendarViewProps> = ({
   sessions,
   topics,
   examFilter,
-  onOpenSession
+  onOpenSession,
+  onOpenAddTopic
 }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const topicMap = new Map<string, Topic>(topics.map(t => [t.id, t]));
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
+  const topicMap = new Map<string, Topic>(topics.map(t => [t.id, t]));
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-2xs">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        <div>
-          <h2 className="text-base font-bold text-slate-900 dark:text-white">
-            Revision Calendar — {format(currentMonth, 'MMMM yyyy')}
+    <div className="bg-[#101218] border border-[#272C38] rounded-2xl p-5 shadow-xs space-y-4">
+      {/* Month Header and Navigation */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#272C38]">
+        <div className="flex items-center gap-2">
+          <CalendarIcon className="w-4 h-4 text-[#8B9CFF]" />
+          <h2 className="text-base font-bold text-[#F5F7FA]">
+            {format(currentMonth, 'MMMM yyyy')}
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Spaced repetition distribution and planned recall deadlines.
-          </p>
         </div>
-        <div className="flex gap-2">
+
+        <div className="flex items-center gap-1.5 self-start sm:self-auto">
           <button
-            onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
-            className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+            className="p-1.5 border border-[#272C38] rounded-xl hover:bg-[#161922] text-[#A1A8B7] hover:text-[#F5F7FA] transition"
+            aria-label="Previous month"
           >
-            Prev
+            <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             onClick={() => setCurrentMonth(new Date())}
-            className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            className="px-3 py-1.5 text-xs font-semibold border border-[#272C38] rounded-xl hover:bg-[#161922] text-[#F5F7FA] transition font-mono"
           >
-            Current Month
+            Today
           </button>
           <button
-            onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
-            className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+            className="p-1.5 border border-[#272C38] rounded-xl hover:bg-[#161922] text-[#A1A8B7] hover:text-[#F5F7FA] transition"
+            aria-label="Next month"
           >
-            Next
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 text-center font-bold text-xs text-slate-400 py-2 border-b border-slate-200 dark:border-slate-800">
-        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+      {/* Zero topics banner if empty */}
+      {topics.length === 0 && (
+        <div className="p-3.5 bg-[#161922] border border-[#272C38] rounded-xl flex items-center justify-between text-xs text-[#A1A8B7] gap-3">
+          <div className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-[#8B9CFF] shrink-0" />
+            <span>No topics added yet. Add topics to populate your spaced repetition review schedule.</span>
+          </div>
+          {onOpenAddTopic && (
+            <button
+              onClick={onOpenAddTopic}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#8B9CFF] hover:bg-[#9DAEFF] text-[#08090D] font-bold text-xs shrink-0 transition"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Topic</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Weekday Columns */}
+      <div className="grid grid-cols-7 gap-1 text-center font-semibold text-xs text-[#737B8C] py-2 border-b border-[#272C38]">
+        <div>Sun</div>
+        <div>Mon</div>
+        <div>Tue</div>
+        <div>Wed</div>
+        <div>Thu</div>
+        <div>Fri</div>
+        <div>Sat</div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1.5 mt-2">
+      {/* Calendar Days Grid */}
+      <div className="grid grid-cols-7 gap-1.5">
         {daysInMonth.map((day) => {
           const dayStr = format(day, 'yyyy-MM-dd');
           const daySessions = sessions.filter(s => {
@@ -69,47 +103,63 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             return s.scheduledDate === dayStr;
           });
 
+          const isToday = isSameDay(day, new Date());
+
           return (
             <div
               key={dayStr}
-              className={`min-h-[96px] p-1.5 border rounded-lg text-left transition ${
-                isSameDay(day, new Date())
-                  ? 'bg-blue-50/70 dark:bg-blue-950/30 border-blue-400 dark:border-blue-700 ring-1 ring-blue-400/30'
-                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
+              className={`min-h-[105px] p-2 border rounded-xl text-left transition flex flex-col justify-between ${
+                isToday
+                  ? 'bg-[#1C202B] border-[#8B9CFF]/60 ring-1 ring-[#8B9CFF]/30'
+                  : 'bg-[#161922] border-[#272C38] hover:border-[#3B4254]'
               }`}
             >
-              <div className="text-[11px] font-bold text-slate-500 mb-1 flex items-center justify-between">
-                <span>{format(day, 'd')}</span>
-                {isSameDay(day, new Date()) && (
-                  <span className="text-[9px] px-1 rounded bg-blue-600 text-white font-mono">Today</span>
-                )}
-              </div>
-              <div className="space-y-1">
-                {daySessions.slice(0, 3).map(s => {
-                  const t = topicMap.get(s.topicId);
-                  return (
-                    <div
-                      key={s.id}
-                      onClick={() => t && onOpenSession(s, t)}
-                      title={`${t?.name} (Rev ${s.sequenceNumber})`}
-                      className={`text-[10px] p-1 rounded font-medium cursor-pointer truncate transition hover:opacity-80 ${
-                        s.status === 'COMPLETED'
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                          : s.scheduledDate < format(new Date(), 'yyyy-MM-dd')
-                          ? 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300'
-                          : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
-                      }`}
-                    >
-                      {t?.name}
+              <div>
+                <div className="text-[11px] font-mono font-bold text-[#737B8C] mb-1.5 flex items-center justify-between">
+                  <span className={isToday ? 'text-[#8B9CFF]' : ''}>{format(day, 'd')}</span>
+                  {isToday && (
+                    <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-[#8B9CFF]/20 text-[#8B9CFF] font-semibold">
+                      Today
+                    </span>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  {daySessions.slice(0, 3).map(s => {
+                    const t = topicMap.get(s.topicId);
+                    const isCompleted = s.status === 'COMPLETED';
+                    const isOverdue = !isCompleted && s.scheduledDate < todayStr;
+
+                    return (
+                      <div
+                        key={s.id}
+                        onClick={() => t && onOpenSession(s, t)}
+                        title={`${t?.name} (Rev ${s.sequenceNumber})`}
+                        className={`text-[10px] p-1.5 rounded-lg font-medium cursor-pointer truncate transition ${
+                          isCompleted
+                            ? 'bg-[#42D6A4]/15 text-[#42D6A4] hover:bg-[#42D6A4]/25'
+                            : isOverdue
+                            ? 'bg-[#FF727C]/15 text-[#FF727C] hover:bg-[#FF727C]/25'
+                            : 'bg-[#8B9CFF]/15 text-[#8B9CFF] hover:bg-[#8B9CFF]/25'
+                        }`}
+                      >
+                        <span className="font-semibold font-mono">R{s.sequenceNumber}:</span> {t?.name}
+                      </div>
+                    );
+                  })}
+                  {daySessions.length > 3 && (
+                    <div className="text-[9px] text-[#737B8C] text-right font-mono pr-1">
+                      +{daySessions.length - 3} more
                     </div>
-                  );
-                })}
-                {daySessions.length > 3 && (
-                  <span className="text-[10px] text-slate-400 font-semibold block px-1">
-                    +{daySessions.length - 3} more
-                  </span>
-                )}
+                  )}
+                </div>
               </div>
+
+              {daySessions.length > 0 && (
+                <div className="text-[9px] text-[#737B8C] font-mono mt-2 pt-1 border-t border-[#272C38]/50 flex justify-between">
+                  <span>{daySessions.filter(s => s.status === 'COMPLETED').length}/{daySessions.length} done</span>
+                </div>
+              )}
             </div>
           );
         })}
