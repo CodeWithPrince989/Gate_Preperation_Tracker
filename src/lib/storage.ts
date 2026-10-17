@@ -41,6 +41,37 @@ export const StorageEngine = {
   },
 
   async getTopics(): Promise<Topic[]> {
+    // 1. Try Express API (connected to Supabase with secret key)
+    try {
+      const res = await fetch('/api/topics');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped: Topic[] = data.map((d: any) => ({
+            id: d.id,
+            name: d.name,
+            subjectName: d.subject_name,
+            exam: d.exam,
+            firstStudiedAt: d.first_studied_at,
+            topicType: d.topic_type,
+            learningSource: d.learning_source,
+            initialConfidence: d.initial_confidence,
+            estimatedDifficulty: d.estimated_difficulty,
+            masteryStatus: d.mastery_status,
+            notes: d.notes || '',
+            resourceUrl: d.resource_url || '',
+            checklist: d.checklist || [],
+            createdAt: d.created_at
+          }));
+          setItem(KEYS.TOPICS, mapped);
+          return mapped;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    // 2. Try direct Supabase
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase.from('topics').select('*').order('created_at', { ascending: false });
@@ -68,6 +99,7 @@ export const StorageEngine = {
         console.warn('Supabase fetch failed, falling back to local storage:', err);
       }
     }
+
     return getItem<Topic[]>(KEYS.TOPICS, []);
   },
 
@@ -81,23 +113,36 @@ export const StorageEngine = {
     }
     setItem(KEYS.TOPICS, topics);
 
+    const payload = {
+      id: topic.id,
+      name: topic.name,
+      subject_name: topic.subjectName,
+      exam: topic.exam,
+      first_studied_at: topic.firstStudiedAt,
+      topic_type: topic.topicType,
+      learning_source: topic.learningSource,
+      initial_confidence: topic.initialConfidence,
+      estimated_difficulty: topic.estimatedDifficulty,
+      mastery_status: topic.masteryStatus,
+      notes: topic.notes,
+      resource_url: topic.resourceUrl,
+      checklist: topic.checklist
+    };
+
+    try {
+      await fetch('/api/topics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      return;
+    } catch {
+      // ignore
+    }
+
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('topics').upsert({
-          id: topic.id,
-          name: topic.name,
-          subject_name: topic.subjectName,
-          exam: topic.exam,
-          first_studied_at: topic.firstStudiedAt,
-          topic_type: topic.topicType,
-          learning_source: topic.learningSource,
-          initial_confidence: topic.initialConfidence,
-          estimated_difficulty: topic.estimatedDifficulty,
-          mastery_status: topic.masteryStatus,
-          notes: topic.notes,
-          resource_url: topic.resourceUrl,
-          checklist: topic.checklist
-        });
+        await supabase.from('topics').upsert(payload);
       } catch (err) {
         console.warn('Supabase upsert topic failed:', err);
       }
@@ -110,6 +155,13 @@ export const StorageEngine = {
     setItem(KEYS.TOPICS, topics);
     setItem(KEYS.SESSIONS, sessions);
 
+    try {
+      await fetch(`/api/topics/${topicId}`, { method: 'DELETE' });
+      return;
+    } catch {
+      // ignore
+    }
+
     if (isSupabaseConfigured && supabase) {
       try {
         await supabase.from('topics').delete().eq('id', topicId);
@@ -120,6 +172,33 @@ export const StorageEngine = {
   },
 
   async getSessions(): Promise<RevisionSession[]> {
+    try {
+      const res = await fetch('/api/sessions');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped: RevisionSession[] = data.map((d: any) => ({
+            id: d.id,
+            topicId: d.topic_id,
+            sequenceNumber: d.sequence_number,
+            scheduledDate: d.scheduled_date,
+            completedAt: d.completed_at,
+            status: d.status,
+            durationMinutes: d.duration_minutes,
+            recallRating: d.recall_rating,
+            questionsAttempted: d.questions_attempted,
+            questionsCorrect: d.questions_correct,
+            mistakesSummary: d.mistakes_summary,
+            retrievalNotes: d.retrieval_notes
+          }));
+          setItem(KEYS.SESSIONS, mapped);
+          return mapped;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase.from('revision_sessions').select('*');
@@ -157,22 +236,34 @@ export const StorageEngine = {
     });
     setItem(KEYS.SESSIONS, sessions);
 
+    const rows = newSessions.map(s => ({
+      id: s.id,
+      topic_id: s.topicId,
+      sequence_number: s.sequenceNumber,
+      scheduled_date: s.scheduledDate,
+      completed_at: s.completedAt,
+      status: s.status,
+      duration_minutes: s.durationMinutes,
+      recall_rating: s.recallRating,
+      questions_attempted: s.questionsAttempted,
+      questions_correct: s.questionsCorrect,
+      mistakes_summary: s.mistakesSummary,
+      retrieval_notes: s.retrievalNotes
+    }));
+
+    try {
+      await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(rows)
+      });
+      return;
+    } catch {
+      // ignore
+    }
+
     if (isSupabaseConfigured && supabase) {
       try {
-        const rows = newSessions.map(s => ({
-          id: s.id,
-          topic_id: s.topicId,
-          sequence_number: s.sequenceNumber,
-          scheduled_date: s.scheduledDate,
-          completed_at: s.completedAt,
-          status: s.status,
-          duration_minutes: s.durationMinutes,
-          recall_rating: s.recallRating,
-          questions_attempted: s.questionsAttempted,
-          questions_correct: s.questionsCorrect,
-          mistakes_summary: s.mistakesSummary,
-          retrieval_notes: s.retrievalNotes
-        }));
         await supabase.from('revision_sessions').upsert(rows);
       } catch (err) {
         console.warn('Supabase upsert sessions failed:', err);
@@ -181,6 +272,34 @@ export const StorageEngine = {
   },
 
   async getPracticeLogs(): Promise<PracticeLog[]> {
+    try {
+      const res = await fetch('/api/practice-logs');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped: PracticeLog[] = data.map((d: any) => ({
+            id: d.id,
+            topicId: d.topic_id,
+            subjectName: d.subject_name,
+            exam: d.exam,
+            gateYear: d.gate_year,
+            questionRef: d.question_ref,
+            marks: Number(d.marks),
+            result: d.result,
+            timeTakenSeconds: d.time_taken_seconds,
+            errorCategory: d.error_category,
+            explanation: d.explanation,
+            solvedIndependently: d.solved_independently,
+            createdAt: d.created_at
+          }));
+          setItem(KEYS.LOGS, mapped);
+          return mapped;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase.from('practice_logs').select('*').order('created_at', { ascending: false });
@@ -215,22 +334,35 @@ export const StorageEngine = {
     logs.unshift(log);
     setItem(KEYS.LOGS, logs);
 
+    const payload = {
+      id: log.id,
+      topic_id: log.topicId,
+      subject_name: log.subjectName,
+      exam: log.exam,
+      gate_year: log.gateYear,
+      question_ref: log.questionRef,
+      marks: log.marks,
+      result: log.result,
+      time_taken_seconds: log.timeTakenSeconds,
+      error_category: log.errorCategory,
+      explanation: log.explanation,
+      solved_independently: log.solvedIndependently
+    };
+
+    try {
+      await fetch('/api/practice-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      return;
+    } catch {
+      // ignore
+    }
+
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('practice_logs').insert({
-          id: log.id,
-          topic_id: log.topicId,
-          subject_name: log.subjectName,
-          exam: log.exam,
-          gate_year: log.gateYear,
-          question_ref: log.questionRef,
-          marks: log.marks,
-          result: log.result,
-          time_taken_seconds: log.timeTakenSeconds,
-          error_category: log.errorCategory,
-          explanation: log.explanation,
-          solved_independently: log.solvedIndependently
-        });
+        await supabase.from('practice_logs').insert(payload);
       } catch (err) {
         console.warn('Supabase insert practice log failed:', err);
       }
@@ -238,6 +370,26 @@ export const StorageEngine = {
   },
 
   async getActivities(): Promise<StudyActivity[]> {
+    try {
+      const res = await fetch('/api/activities');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped: StudyActivity[] = data.map((d: any) => ({
+            id: d.id,
+            activityDate: d.activity_date,
+            activityType: d.activity_type,
+            durationMinutes: d.duration_minutes,
+            referenceId: d.reference_id
+          }));
+          setItem(KEYS.ACTIVITIES, mapped);
+          return mapped;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase.from('study_activities').select('*');
@@ -264,15 +416,28 @@ export const StorageEngine = {
     acts.push(act);
     setItem(KEYS.ACTIVITIES, acts);
 
+    const payload = {
+      id: act.id,
+      activity_date: act.activityDate,
+      activity_type: act.activityType,
+      duration_minutes: act.durationMinutes,
+      reference_id: act.referenceId
+    };
+
+    try {
+      await fetch('/api/activities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      return;
+    } catch {
+      // ignore
+    }
+
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('study_activities').insert({
-          id: act.id,
-          activity_date: act.activityDate,
-          activity_type: act.activityType,
-          duration_minutes: act.durationMinutes,
-          reference_id: act.referenceId
-        });
+        await supabase.from('study_activities').insert(payload);
       } catch (err) {
         console.warn('Supabase insert study activity failed:', err);
       }
